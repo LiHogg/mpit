@@ -1,5 +1,5 @@
 <?php
-header('Access-Control-Allow-Origin: http://localhost:5173');
+header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS');
 //header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Headers: *');
@@ -149,7 +149,7 @@ if ($method === 'POST') {
 
         // Password — транслитерация + 5 случайных цифр
         $randomDigits = strval(rand(10000, 99999)); // 5 случайных цифр
-        $password = transliterate($organization) . $randomDigits;
+        $password = index . phptransliterate($organization) . $randomDigits;
 
         // Определяем role
         // 2 — сетевой провайдер, 3 — магистральный провайдер
