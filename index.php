@@ -190,6 +190,15 @@ echo json_encode([
     'message' => 'Not found'
 ], JSON_UNESCAPED_UNICODE);
 
+if ($method === "GET") {
+    if ($type === 'index') {
+        // ... ваша логика для index ...
+    }
+    elseif ($type === 'poles') {
+        getPoles($connect); // вызов функции, которая вернёт json
+        exit;
+    }
+}
 
 
 

@@ -450,3 +450,41 @@ function deleteUser($connect, $id)
         "message" => "User is deleted"
     ]);
 }
+
+
+function getPoles(PDO $connect) {
+    // 1. Подготовим SQL, чтобы достать id, а также X/Y координаты (lon/lat) из поля POINT
+    //    Обычно X = lon, Y = lat, но убедитесь, что в данных именно так.
+    $sql = "
+        SELECT
+            id,
+            ST_X(location) AS lon,
+            ST_Y(location) AS lat
+        FROM poles
+    ";
+
+    // 2. Выполняем запрос
+    $stmt = $connect->prepare($sql);
+    $stmt->execute();
+
+    // 3. Забираем все строки как ассоциативный массив
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // 4. Преобразуем в нужный формат
+    //    Нужно отдать: "id" и "location": "lat lon"
+    $result = [];
+    foreach ($rows as $row) {
+        // Собираем строку "lat lon"
+        $lat = $row['lat'];
+        $lon = $row['lon'];
+
+        $result[] = [
+            'id'       => $row['id'],
+            'location' => "{$lat} {$lon}"  // например: "56.293444 44.025352"
+        ];
+    }
+
+    // 5. Возвращаем JSON
+    //    JSON_UNESCAPED_UNICODE чтобы не было проблем с кириллицей
+    echo json_encode($result, JSON_UNESCAPED_UNICODE);
+}
