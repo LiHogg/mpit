@@ -191,14 +191,100 @@ echo json_encode([
 ], JSON_UNESCAPED_UNICODE);
 
 if ($method === "GET") {
+
+    // 1) Пример логики "index" (как в вашем исходном коде)
     if ($type === 'index') {
-        // ... ваша логика для index ...
-    }
-    elseif ($type === 'poles') {
-        getPoles($connect); // вызов функции, которая вернёт json
+        if (isset($id)) {
+            // Если передан id, например /index/123
+            getPost($connect, $id);  // ваша функция в functions.php
+        } else {
+            // Если id нет, /index
+            getPosts($connect);      // ваша функция в functions.php
+        }
         exit;
     }
+
+    // 2) Эндпоинт /poles (возвращает массив опор)
+    elseif ($type === 'poles') {
+        getPoles($connect);   // функция, которая достаёт из таблицы `poles` и возвращает JSON
+        exit;
+    }
+
+    // Если не подошли никакие условия, вернём 404
+    http_response_code(404);
+    echo json_encode([
+        'message' => 'Not found'
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
+// ----------------------------------
+// Пример обработчиков POST-запросов
+// ----------------------------------
+elseif ($method === 'POST') {
+    if ($type === 'register') {
+        // --------------------------------------
+        // Логика из примера для регистрации
+        // --------------------------------------
+        $organization = $_POST['organization'] ?? '';
+        $orgType      = $_POST['org_type']     ?? '';
+        $phone        = $_POST['phone']        ?? '';
+        $email        = $_POST['email']        ?? '';
 
+        // Генерируем login и password
+        // Login — просто название организации (или ваша логика)
+        $login = $organization;
 
+        // Допустим, у вас есть функция transliterate в functions.php
+        // Если нет, нужно добавить (см. пример ниже).
+        $randomDigits = strval(rand(10000, 99999)); // 5 случайных цифр
+        // !!! Обратите внимание, у вас в тексте было "index . phptransliterate($organization)" — кажется, описка.
+        // Ставьте просто transliterate($organization) или другую вашу логику.
+        $password = transliterate($organization) . $randomDigits;
+
+        // Определяем role по org_type:
+        // 2 — сетевой провайдер, 3 — магистральный провайдер
+        $role = ($orgType == 2) ? 2 : 3;
+
+        // Сохранение в БД
+        // Предположим, что в таблице `users` столбцы:
+        //  id, login, password, role, User_name, contact_info, ...
+        //  Обратите внимание: вы указали два раза contact_info. Нужно подправить.
+        //  Например, пусть будет поля (User_name, contact_info, contact_email) -- или как у вас в схеме.
+        $sql = "INSERT INTO users 
+                (login, password, role, User_name, contact_info) 
+                VALUES (?, ?, ?, ?, ?)";
+        $stmt = $connect->prepare($sql);
+        $stmt->execute([
+            $login,
+            $password,
+            $role,
+            $organization,
+            $phone // contact_info (запишем телефон),
+            // Если нужен email — добавьте колонку в запрос
+        ]);
+
+        // Возвращаем новосозданные логин и пароль
+        echo json_encode([
+            'login' => $login,
+            'password' => $password
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // Если не подошло никакое условие
+    http_response_code(404);
+    echo json_encode([
+        'message' => 'Not found'
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// -----------------------------------
+// Если запрос не GET и не POST
+// -----------------------------------
+http_response_code(404);
+echo json_encode([
+    'message' => 'Not found'
+], JSON_UNESCAPED_UNICODE);
+exit;
